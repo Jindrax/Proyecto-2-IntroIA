@@ -1,26 +1,66 @@
-from IMotor import IMotor
+from Variable import Variable
+from Query import Query
 
-motor = IMotor()
+variables = []
 
-motor.addClause("Hombre(marco)")
-motor.addClause("Pompeyano(marco)")
-motor.addClause("¬Pompeyano(X3) | Romano(X3)")
-motor.addClause("Gobernante(cesar)")
-motor.addClause("¬Romano(X5) | ¬Leal(X5, cesar) | Odia(X5, cesar)")
-motor.addClause("¬Hombre(X7) | ¬Gobernante(Y7) | ¬IntentaAsesinar(X7, Y7) | Leal(X7, Y7)")
-motor.addClause("IntentaAsesinar(marco, cesar)")
-motor.query("Odia(marco, cesar)")
+#Columna que contiene la información principal de la consulta
+solucion=Query("¿Se jugó?",["Si","No" ])
 
-input()
 
-motor = IMotor()
+# Se agregan las columans con la información de la cual depende  la solución
+variables.append(Variable("Cielo",["Lluvia","Nublado", "Soleado" ], solucion))
 
-motor.addClause('¬Animal(Y1) | ¬Ama(X1, Y1) | Ama(F(X1Y1), X1)')
-motor.addClause('¬Animal(G(Z2)) | ¬Mata(F(Z2), G(Z2)) | ¬Ama(Z2, F(Z2))')
-motor.addClause('¬Animal(X3) | Ama(jack, X3)')
-motor.addClause('Gato(tuna)')
-motor.addClause('Mata(jack, tuna) | Mata(curiosidad, tuna)')
-motor.addClause('¬Gato(X5) | Animal(X5)')
-motor.query('Mata(curiosidad, tuna)')
+variables.append(Variable("Temperatura",["Calor","Templado","Frio" ], solucion))
 
-#print(motor.solve('Animal(X)'))
+variables.append(Variable("Humedad",["Alta","Normal", "Baja" ], solucion))
+
+variables.append(Variable("Viento",["Si","No" ], solucion))
+
+#Se extraen los datos y se tiene el conteo de las variables y sus respectvos tags.
+
+fic = open("data.dat", "r")
+lines = fic.readlines()
+headers = lines.pop(0);
+
+
+for line in lines:
+    data= line.rstrip().split(",")
+    last=data.pop()
+    solucion.add(last)
+    for variable,dat in zip(variables,data):
+        variable.add(dat, last)
+
+
+#Se imprime el query y valores de las variables
+print(solucion)
+for variable in variables:
+  print(variable.counts)
+
+#consulta que se desea desarrollar
+consulta=["Lluvia", "Templado", "Normal", "Si" ]
+
+
+#Se calcula la solución del ejercicio, se calculan las probabilidades tentativas de cada tag del Query
+
+soluciones=[]
+for tag, val  in zip (solucion.tags, solucion.counts):
+  tent=1
+  for variable,dat in zip(variables,consulta):
+    tent=tent*variable.getOcurrencias(tag,dat)
+  tent=tent/(solucion.total*(val**(len(consulta)-1)))
+  soluciones.append([tent])
+
+#print(soluciones)
+
+#Se busca el tag que tenga mayor probabilidad
+
+mayorTag=solucion.tags[0]
+mayorValor=soluciones[0]
+for tag, val  in zip (solucion.tags, soluciones):
+  if(val>mayorValor):
+    mayorTag=tag
+    mayorValor=val
+
+print("La respuesta es "+mayorTag)
+print("Probabilidad: ")
+print(mayorValor)
